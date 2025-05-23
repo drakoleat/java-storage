@@ -988,7 +988,12 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage, 
             .addKeyCondition(ConditionV4Type.MATCHES, blobInfo.getName())
             .addCustomCondition(ConditionV4Type.MATCHES, "x-goog-date", date)
             .addCustomCondition(ConditionV4Type.MATCHES, "x-goog-credential", signingCredential)
-            .addCustomCondition(ConditionV4Type.MATCHES, "x-goog-algorithm", "GOOG4-RSA-SHA256")
+            .addCustomCondition(
+                ConditionV4Type.MATCHES,
+                "x-goog-algorithm",
+                optionMap.containsKey(SignUrlOption.Option.SIGNATURE_ALGORITHM)
+                    ? (String) optionMap.get(SignUrlOption.Option.SIGNATURE_ALGORITHM)
+                    : SignatureInfo.GOOG4_RSA_SHA256)
             .build();
     PostPolicyV4Document document =
         PostPolicyV4Document.of(
@@ -1004,7 +1009,11 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage, 
     }
     policyFields.put("key", blobInfo.getName());
     policyFields.put("x-goog-credential", signingCredential);
-    policyFields.put("x-goog-algorithm", "GOOG4-RSA-SHA256");
+    policyFields.put(
+        "x-goog-algorithm",
+        optionMap.containsKey(SignUrlOption.Option.SIGNATURE_ALGORITHM)
+            ? (String) optionMap.get(SignUrlOption.Option.SIGNATURE_ALGORITHM)
+            : SignatureInfo.GOOG4_RSA_SHA256);
     policyFields.put("x-goog-date", date);
     policyFields.put("x-goog-signature", signature);
     policyFields.put("policy", policy);
@@ -1116,8 +1125,14 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage, 
             ? (HttpMethod) optionMap.get(SignUrlOption.Option.HTTP_METHOD)
             : HttpMethod.GET;
 
+    String algorithm = (String) optionMap.get(SignUrlOption.Option.SIGNATURE_ALGORITHM);
+    if (algorithm == null) {
+      algorithm = SignatureInfo.GOOG4_RSA_SHA256;
+    }
+
     SignatureInfo.Builder signatureInfoBuilder =
         new SignatureInfo.Builder(httpVerb, expiration, path);
+    signatureInfoBuilder.setAlgorithm(algorithm);
 
     if (firstNonNull((Boolean) optionMap.get(SignUrlOption.Option.MD5), false)) {
       checkArgument(blobInfo.getMd5() != null, "Blob is missing a value for md5");

@@ -66,6 +66,7 @@ public class SignatureInfo {
   private final Storage.SignUrlOption.SignatureVersion signatureVersion;
   private final String accountEmail;
   private final long timestamp;
+  private final String algorithm;
 
   private final String yearMonthDay;
   private final String exactDate;
@@ -79,6 +80,11 @@ public class SignatureInfo {
     this.signatureVersion = builder.signatureVersion;
     this.accountEmail = builder.accountEmail;
     this.timestamp = builder.timestamp;
+    if (builder.algorithm == null || builder.algorithm.isEmpty()) {
+      this.algorithm = GOOG4_RSA_SHA256;
+    } else {
+      this.algorithm = builder.algorithm;
+    }
 
     ImmutableMap.Builder<String, String> headerBuilder =
         new ImmutableMap.Builder<String, String>().putAll(builder.canonicalizedExtensionHeaders);
@@ -146,7 +152,7 @@ public class SignatureInfo {
   private String constructV4UnsignedPayload() {
     StringBuilder payload = new StringBuilder();
 
-    payload.append(GOOG4_RSA_SHA256).append(COMPONENT_SEPARATOR);
+    payload.append(this.algorithm).append(COMPONENT_SEPARATOR);
     payload.append(exactDate).append(COMPONENT_SEPARATOR);
     payload.append(yearMonthDay).append(SCOPE).append(COMPONENT_SEPARATOR);
     payload.append(constructV4CanonicalRequestHash());
@@ -239,7 +245,7 @@ public class SignatureInfo {
     TreeMap<String, String> sortedParamMap = getNonReservedUserQueryParams();
 
     // Add in the reserved auth-specific query params.
-    sortedParamMap.put("X-Goog-Algorithm", Rfc3986UriEncode(GOOG4_RSA_SHA256, true));
+    sortedParamMap.put("X-Goog-Algorithm", Rfc3986UriEncode(this.algorithm, true));
     sortedParamMap.put(
         "X-Goog-Credential", Rfc3986UriEncode(accountEmail + "/" + yearMonthDay + SCOPE, true));
     sortedParamMap.put("X-Goog-Date", Rfc3986UriEncode(exactDate, true));
@@ -306,6 +312,7 @@ public class SignatureInfo {
     private Storage.SignUrlOption.SignatureVersion signatureVersion;
     private String accountEmail;
     private long timestamp;
+    private String algorithm;
 
     /**
      * Constructs builder.
@@ -332,6 +339,7 @@ public class SignatureInfo {
       this.signatureVersion = signatureInfo.signatureVersion;
       this.accountEmail = signatureInfo.accountEmail;
       this.timestamp = signatureInfo.timestamp;
+      this.algorithm = signatureInfo.algorithm;
     }
 
     public Builder setContentMd5(String contentMd5) {
@@ -374,6 +382,11 @@ public class SignatureInfo {
     public Builder setTimestamp(long timestamp) {
       this.timestamp = timestamp;
 
+      return this;
+    }
+
+    public Builder setAlgorithm(String algorithm) {
+      this.algorithm = algorithm;
       return this;
     }
 

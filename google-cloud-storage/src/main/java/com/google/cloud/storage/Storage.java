@@ -2944,7 +2944,8 @@ public interface Storage extends Service<StorageOptions>, AutoCloseable {
       PATH_STYLE,
       VIRTUAL_HOSTED_STYLE,
       BUCKET_BOUND_HOST_NAME,
-      QUERY_PARAMS
+      QUERY_PARAMS,
+      SIGNATURE_ALGORITHM
     }
 
     @TransportCompatibility(Transport.HTTP)
